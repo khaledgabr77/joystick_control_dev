@@ -27,7 +27,7 @@ private:
     int index5=3;
     int index6=2;
 
-    public:
+public:
 
     JoystickNode(){
         ros::NodeHandle n;
