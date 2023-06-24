@@ -2,25 +2,21 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Joy.h"
-
+#include <vector>
 
 class JoystickNode {
-
-    private:
-
+private:
     ros::Publisher  vel_pub;
     ros::Subscriber joy_subscriber;
-    
-   
     geometry_msgs::Twist vel_msg;
-    
-    float   axes[5];
-    float  buttons[11];
+
+    std::vector<float> axes;
+    std::vector<float> buttons;
 
     bool data_recived=false;
 
-    float linear_speed=0.25,
-           angular_speed=0.5;
+    float linear_speed=0.25;
+    float angular_speed=0.5;
 
     std::string cmd_vel_topic="cmd_vel";
 
@@ -35,14 +31,14 @@ class JoystickNode {
 
     JoystickNode(){
         ros::NodeHandle n;
-        ros::NodeHandle nh("~");
-        nh.getParam("cmd_vel_topic", cmd_vel_topic);
-        nh.getParam("linear_direction_index", index1);
-        nh.getParam("angular_direction_index", index2);
-        nh.getParam("linear_speed_increase_index", index3);
-        nh.getParam("linear_speed_decrease_index", index4);
-        nh.getParam("angular_speed_increase_index", index5);
-        nh.getParam("angular_speed_decrease_index", index6);
+        ros::NodeHandle nh_private("~");
+        nh_private.param("cmd_vel_topic", cmd_vel_topic);
+        nh_private.param("linear_direction_index", index1);
+        nh_private.param("angular_direction_index", index2);
+        nh_private.param("linear_speed_increase_index", index3);
+        nh_private.param("linear_speed_decrease_index", index4);
+        nh_private.param("angular_speed_increase_index", index5);
+        nh_private.param("angular_speed_decrease_index", index6);
 
         vel_pub = n.advertise<geometry_msgs::Twist>(cmd_vel_topic, 10); 
         joy_subscriber = n.subscribe("joy",10, &JoystickNode::joy_callback, this);
@@ -51,19 +47,12 @@ class JoystickNode {
     }
 
 
-    void joy_callback(const sensor_msgs::Joy  &msg){
+    void joy_callback(const sensor_msgs::Joy::ConstPtr&  msg){
 
         data_recived=true;
 
-        for (int i = 0; i < sizeof(axes)/ sizeof(int); i++)
-        {
-            axes[i] = msg.axes[i];
-        }
-        
-        for (int j = 0; j < sizeof(buttons)/ sizeof(int); j++)
-        {
-            buttons[j] = msg.buttons[j];
-        }    
+        axes = msg->axes;
+        buttons = msg->buttons;
 
     }
 
@@ -110,28 +99,21 @@ class JoystickNode {
         }
     }
           
-    void print_data(){
-        if (data_recived)
-        {
-            std::cout<< "axes_array: "<<std::endl;
-            for (int k = 0; k < sizeof(axes)/ sizeof(int); k++)
-            {
-                std::cout<<" "<<axes[k]; 
+    void printData() {
+        if (data_received) {
+            std::cout << "axes_array: ";
+            for (const auto& axis : axes) {
+                std::cout << axis << " ";
             }
+            std::cout << std::endl;
 
-            std::cout<< "\n"<<std::endl;
-
-            std::cout<< "bottons_array: "<<std::endl;
-
-            for (int l = 0; l < sizeof(buttons)/ sizeof(int); l++)
-            {
-                std::cout<<" "<<buttons[l] ;
-            } 
-            
-            std::cout<< "\n "<<std::endl;
-         }
+            std::cout << "buttons_array: ";
+            for (const auto& button : buttons) {
+                std::cout << button << " ";
+            }
+            std::cout << std::endl;
+        }
     }
-
 };
 
 int main (int argc, char **argv)
